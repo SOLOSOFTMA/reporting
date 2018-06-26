@@ -82,8 +82,8 @@ def get_data(filters):
 def get_opening_balances(filters):
 	balance_sheet_opening = get_rootwise_opening_balances(filters, "Balance Sheet")
 	pl_opening = get_rootwise_opening_balances(filters, "Profit and Loss")
-
 	balance_sheet_opening.update(pl_opening)
+
 	return balance_sheet_opening
 
 
@@ -96,29 +96,49 @@ def get_rootwise_opening_balances(filters, report_type):
 	if not flt(filters.with_period_closing_entry):
 		additional_conditions += " and ifnull(voucher_type, '')!='Period Closing Voucher'"
 
-	gle = frappe.db.sql("""
-		select
-			account, sum(debit) as opening_debit, sum(credit) as opening_credit
-		from `tabGL Entry`
-		where
-			company=%(company)s
-			{additional_conditions}
-			and (posting_date < %(from_date)s or ifnull(is_opening, 'No') = 'Yes')
-			and account in (select name from `tabAccount` where report_type=%(report_type)s)
-		group by account""".format(additional_conditions=additional_conditions),
-		{
-			"company": filters.company,
-			"from_date": filters.from_date,
-			"report_type": report_type,
-			"year_start_date": filters.year_start_date
-		},
-		as_dict=True)
+		"""this method populates the common properties of a gl entry record"""
 
-	opening = frappe._dict()
-	for d in gle:
-		opening.setdefault(d.account, d)
+	draft_journal_entry = frappe.get_all('Journal Entry', filters={'docstatus': '0','is_opening':'Yes'}, \
+		fields=['name'])
 
-	return opening
+
+	gle = {}
+
+	for ge in draft_journal_entry:	
+		doc = frappe.get_doc('Journal Entry', ge['name'])
+
+		for d in doc.accounts:
+			if d.debit or d.credit:
+				if  d.account in gle:
+					gle[d.account]['opening_debit'] +=  flt(d.debit, d.precision("debit"))
+					gle[d.account]['opening_credit'] += flt(d.credit, d.precision("credit"))
+				else:
+					gle[d.account] = {
+											"account":d.account,
+											'opening_debit' : flt(d.debit, d.precision("debit")),
+											'opening_credit' : flt(d.credit, d.precision("credit"))
+										}
+
+
+	# gle = frappe.db.sql("""
+	# 	select
+	# 		account, sum(debit) as opening_debit, sum(credit) as opening_credit
+	# 	from `tabGL Entry`
+	# 	where
+	# 		company=%(company)s
+	# 		{additional_conditions}
+	# 		and (posting_date < %(from_date)s or ifnull(is_opening, 'No') = 'Yes')
+	# 		and account in (select name from `tabAccount` where report_type=%(report_type)s)
+	# 	group by account""".format(additional_conditions=additional_conditions),
+	# 	{
+	# 		"company": filters.company,
+	# 		"from_date": filters.from_date,
+	# 		"report_type": report_type,
+	# 		"year_start_date": filters.year_start_date
+	# 	},
+	# 	as_dict=True)
+
+	return gle
 
 def calculate_values(accounts, gl_entries_by_account, opening_balances, filters, company_currency):
 	init = {

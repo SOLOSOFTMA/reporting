@@ -314,8 +314,8 @@ def set_gl_entries_by_account(company, from_date, to_date, root_lft, root_rgt, f
 			"rgt": root_rgt
 		})
 	
-	print ("accounts_filterd")
-	print (accounts_filterd)
+	# print ("accounts_filterd")
+	# print (accounts_filterd)
 	
 	#~ if filters.get("project"):
 			#~ additional_conditions.append("project = '%s'"%(frappe.db.escape(filters.get("project"))))
