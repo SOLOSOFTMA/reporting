@@ -6,7 +6,7 @@ import frappe, erpnext
 from frappe import _
 from frappe.utils import flt, getdate, formatdate, cstr
 from reporting.reporting.report.financial_statements \
-	import filter_accounts, set_gl_entries_by_account, filter_out_zero_value_rows
+	import filter_accounts, set_gl_entries_by_account2, filter_out_zero_value_rows
 
 value_fields = ("opening_debit", "opening_credit", "debit", "credit", "closing_debit", "closing_credit")
 
@@ -54,7 +54,7 @@ def get_data(filters):
 	accounts = frappe.db.sql("""select name, parent_account, account_name, root_type, report_type, lft, rgt
 		from `tabAccount` where company=%s order by lft""", filters.company, as_dict=True)
 	company_currency = erpnext.get_company_currency(filters.company)
-
+	
 	if not accounts:
 		return None
 
@@ -65,7 +65,7 @@ def get_data(filters):
 
 	gl_entries_by_account = {}
 
-	set_gl_entries_by_account(filters.company, filters.from_date,
+	set_gl_entries_by_account2(filters.company, filters.from_date,
 		filters.to_date, min_lft, max_rgt, filters, gl_entries_by_account, ignore_closing_entries=not flt(filters.with_period_closing_entry))
 
 	opening_balances = get_opening_balances(filters)

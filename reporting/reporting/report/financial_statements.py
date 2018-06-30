@@ -299,6 +299,40 @@ def sort_root_accounts(roots):
 
 	roots.sort(compare_roots)
 
+def set_gl_entries_by_account2(
+		company, from_date, to_date, root_lft, root_rgt, filters, gl_entries_by_account, ignore_closing_entries=False):
+	"""Returns a dict like { "account": [gl entries], ... }"""
+
+	additional_conditions = get_additional_conditions(from_date, ignore_closing_entries, filters)
+
+	gl_entries = frappe.db.sql("""select posting_date, account, debit, credit, is_opening,
+	 fiscal_year, debit_in_account_currency, credit_in_account_currency, account_currency
+	  from `tabGL Entry2`
+		where company=%(company)s
+		{additional_conditions}
+		and posting_date <= %(to_date)s
+		and account in (select name from `tabAccount`
+			where lft >= %(lft)s and rgt <= %(rgt)s)
+		order by account, posting_date""".format(additional_conditions=additional_conditions),
+		{
+			"company": company,
+			"from_date": from_date,
+			"to_date": to_date,
+			"lft": root_lft,
+			"rgt": root_rgt
+		},
+		as_dict=True)
+
+	if filters and filters.get('presentation_currency'):
+		convert_to_presentation_currency(gl_entries, get_currency(filters))
+
+	for entry in gl_entries:
+		gl_entries_by_account.setdefault(entry.account, []).append(entry)
+
+	return gl_entries_by_account
+
+
+
 def set_gl_entries_by_account(company, from_date, to_date, root_lft, root_rgt, filters, gl_entries_by_account,
 		ignore_closing_entries=False):
 	"""Returns a dict like { "account": [gl entries], ... }"""
@@ -381,6 +415,7 @@ def get_draft_gl_entries(filters,from_date,to_date):
 			["posting_date",">=",getdate(from_date)],
 			["posting_date","<=",getdate(to_date)]
 			])
+
 		for doc_name in get_all_docs : 
 			doc = frappe.get_doc(target_doc,doc_name["name"])
 			

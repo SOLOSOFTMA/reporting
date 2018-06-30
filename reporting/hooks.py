@@ -79,13 +79,54 @@ app_license = "MIT"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-#	}
-# }
+	# target_docs_list = [
+	# "Payment Entry", 		Done
+	# "Purchase Invoice", 	Done
+	# "Expense Claim",  	Done
+	# "Journal Entry", 		Done
+	# "Sales Invoice", 		Done
+	# "Purchase Receipt", 
+	# "Delivery Note"]
+
+
+doc_events = {
+	"Payment Entry": {
+		"after_insert": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_payment_entry",
+		"on_trash": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_cancel_payment_entry",
+		"on_submit": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_cancel_payment_entry"
+	},
+	"Expense Claim": {
+		"after_insert": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_expense",
+		"on_trash": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_expense_cancel",
+		"on_submit": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_expense_cancel"
+	},
+	# "Purchase Receipt": {
+	# 	"after_insert": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_purchase_receipt_and_Delivery_note",
+	# 	"on_trash": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_stock_cancel",
+	# 	"on_submit": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_stock_cancel"
+	# },
+	"Purchase Invoice": {
+		"after_insert": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_purchase",
+		"on_trash": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_stock_cancel",
+		"on_submit": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_stock_cancel"
+	},
+	"Sales Invoice": {
+		"after_insert": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_sales_invoice",
+		"on_trash": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_stock_cancel",
+		"on_submit": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_stock_cancel"
+	},
+	"Journal Entry": {
+		"after_insert": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries",
+		"on_trash": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_cancel",
+		"on_submit": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_cancel"
+	}
+	# ,
+	# "Delivery Note": {
+	# 	"after_insert": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_purchase_receipt_and_Delivery_note",
+	# 	"on_trash": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_stock_cancel",
+	# 	"on_submit": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_stock_cancel"
+	# }
+}
 
 # Scheduled Tasks
 # ---------------
