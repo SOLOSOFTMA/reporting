@@ -284,7 +284,7 @@ def checkerrr(gl_map, cancel=False, adv_adj=False, merge_entries=True, update_ou
 		if not cancel:
 			gl_map = process_gl_map(gl_map, merge_entries)
 			if gl_map and len(gl_map) > 1:
-				if save_entries_chker(gl_map, adv_adj, update_outstanding, from_repost)
+				if save_entries_chker(gl_map, adv_adj, update_outstanding, from_repost):
 					return True 
 			else:
 				return False 
