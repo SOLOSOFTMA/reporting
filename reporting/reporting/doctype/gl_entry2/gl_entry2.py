@@ -22,6 +22,7 @@ class GLEntry2(Document):
 
 
 #update for new server create gl2 for journal entry onely 
+list_of_error = []
 
 def new_server():
 	jv = frappe.get_all('Journal Entry', filters={'docstatus': 0 }, fields=['name', 'posting_date'], order_by='posting_date')
@@ -29,6 +30,13 @@ def new_server():
 		jv_name = jv_object.get('name')
 		doc = frappe.get_doc("Journal Entry", jv_name)
 		make_gl_entries(doc,"create")
+	print "list_of_error" 
+	print "list_of_error" 
+	print "list_of_error" 
+	print "list_of_error" 
+	print list_of_error 
+
+	return list_of_error 
 
 #expense claim
 def make_gl_entries_expense(doc, method):
@@ -224,6 +232,7 @@ def make_gl_entries_cancel(doc, method):
 	if gl_map:
 		make_gl2_entries(gl_map, cancel=cancel, adv_adj=adv_adj)
 
+
 @frappe.whitelist()
 def make_gl_entries(doc, method):
 	# from erpnext.accounts.general_ledger import make_gl_entries
@@ -231,7 +240,6 @@ def make_gl_entries(doc, method):
 	cancel=0
 	adv_adj=0,
 	gl_map = []
-	
 	for d in self.get("accounts"):
 		if d.debit or d.credit:
 			gl_map.append(
@@ -255,7 +263,10 @@ def make_gl_entries(doc, method):
 			)
 
 	if gl_map:
-		make_gl2_entries(gl_map, cancel=cancel, adv_adj=adv_adj)
+		if checkerrr(gl_map, cancel=cancel, adv_adj=adv_adj):
+			make_gl2_entries(gl_map, cancel=cancel, adv_adj=adv_adj)
+		else:
+			list_of_error.append(str(doc.name))
 
 def make_gl2_entries(gl_map, cancel=False, adv_adj=False, merge_entries=True, update_outstanding='Yes', from_repost=False):
 	if gl_map:
@@ -265,6 +276,19 @@ def make_gl2_entries(gl_map, cancel=False, adv_adj=False, merge_entries=True, up
 				save_entries(gl_map, adv_adj, update_outstanding, from_repost)
 			else:
 				frappe.throw(_("Incorrect number of General Ledger Entries found. You might have selected a wrong Account in the transaction."))
+		else:
+			delete_gl_entries(gl_map, adv_adj=adv_adj, update_outstanding=update_outstanding)
+
+def checkerrr(gl_map, cancel=False, adv_adj=False, merge_entries=True, update_outstanding='Yes', from_repost=False):
+	if gl_map:
+		if not cancel:
+			gl_map = process_gl_map(gl_map, merge_entries)
+			if gl_map and len(gl_map) > 1:
+				# save_entries(gl_map, adv_adj, update_outstanding, from_repost)
+				return True 
+			else:
+				return False 
+	
 		else:
 			delete_gl_entries(gl_map, adv_adj=adv_adj, update_outstanding=update_outstanding)
 
