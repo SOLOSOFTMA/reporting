@@ -24,11 +24,11 @@ class GLEntry2(Document):
 #update for new server create gl2 for journal entry onely 
 
 def new_server():
-	jv = frappe.get_list('Journal Entry', filters={'docstatus': 0 }, fields=['name', 'posting_date'], order_by='posting_date')
-	for jv_object in jv:                                                       
-		jv_name = jv_object.get('name')
-		doc = frappe.get_doc("Journal Entry", jv_name)
-		make_gl_entries(doc,"create")
+	jv = frappe.get_all('Journal Entry', filters={'docstatus': 0 }, fields=['name', 'posting_date'], order_by='posting_date')
+for jv_object in jv:                                                       
+	jv_name = jv_object.get('name')
+	doc = frappe.get_doc("Journal Entry", jv_name)
+	make_gl_entries(doc,"create")
 
 #expense claim
 def make_gl_entries_expense(doc, method):
