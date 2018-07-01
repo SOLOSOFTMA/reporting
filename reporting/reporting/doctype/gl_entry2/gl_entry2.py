@@ -20,6 +20,16 @@ class GLEntry2(Document):
 	pass
 
 
+
+#update for new server create gl2 for journal entry onely 
+
+def new_server():
+	jv = frappe.get_list('Journal Entry', filters={'docstatus': 0 }, fields=['name', 'posting_date'], order_by='posting_date')
+	for jv_object in jv:                                                       
+		jv_name = jv_object.get('name')
+		doc = frappe.get_doc("Journal Entry", jv_name)
+		make_gl_entries(doc,"create")
+
 #expense claim
 def make_gl_entries_expense(doc, method):
 	self = doc 
@@ -206,7 +216,7 @@ def make_gl_entries_cancel(doc, method):
 					"against_voucher": d.reference_name,
 					"remarks": self.remark,
 					"cost_center": d.cost_center,
-					"project": d.project,
+					"project": d.project
 					# "finance_book": self.finance_book
 				})
 			)
@@ -239,7 +249,7 @@ def make_gl_entries(doc, method):
 					"against_voucher": d.reference_name,
 					"remarks": self.remark,
 					"cost_center": d.cost_center,
-					"project": d.project,
+					"project": d.project
 					# "finance_book": self.finance_book
 				})
 			)
@@ -330,11 +340,7 @@ def save_entries(gl_map, adv_adj, update_outstanding, from_repost=False):
 		if not from_repost:
 			validate_expense_against_budget(entry)
 
-def make_entry(args, adv_adj, update_outstanding, from_repost):
-	print args
-	print adv_adj
-	print update_outstanding
-	print from_repost
+def make_entry(args, adv_adj, update_outstanding, from_repost=False):
 	args.update({"doctype": "GL Entry2"})
 	gle = frappe.get_doc(args)
 	gle.flags.ignore_permissions = 1
