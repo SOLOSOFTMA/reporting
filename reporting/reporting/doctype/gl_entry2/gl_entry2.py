@@ -207,7 +207,7 @@ def make_gl_entries_cancel(doc, method):
 					"remarks": self.remark,
 					"cost_center": d.cost_center,
 					"project": d.project,
-					"finance_book": self.finance_book
+					# "finance_book": self.finance_book
 				})
 			)
 
@@ -240,7 +240,7 @@ def make_gl_entries(doc, method):
 					"remarks": self.remark,
 					"cost_center": d.cost_center,
 					"project": d.project,
-					"finance_book": self.finance_book
+					# "finance_book": self.finance_book
 				})
 			)
 
@@ -321,9 +321,8 @@ def check_if_in_list(gle, gl_map):
 def save_entries(gl_map, adv_adj, update_outstanding, from_repost=False):
 	if not from_repost:
 		validate_account_for_perpetual_inventory(gl_map)
-		
-	round_off_debit_credit(gl_map)
 
+	round_off_debit_credit(gl_map)
 	for entry in gl_map:
 		make_entry(entry, adv_adj, update_outstanding, from_repost)
 		
@@ -331,7 +330,11 @@ def save_entries(gl_map, adv_adj, update_outstanding, from_repost=False):
 		if not from_repost:
 			validate_expense_against_budget(entry)
 
-def make_entry(args, adv_adj, update_outstanding, from_repost=False):
+def make_entry(args, adv_adj, update_outstanding, from_repost):
+	print args
+	print adv_adj
+	print update_outstanding
+	print from_repost
 	args.update({"doctype": "GL Entry2"})
 	gle = frappe.get_doc(args)
 	gle.flags.ignore_permissions = 1
@@ -656,15 +659,15 @@ def set_as_cancel(voucher_type, voucher_no):
 		where voucher_no=%s and voucher_type=%s""",
 		(now(), frappe.session.user, voucher_type, voucher_no))
 
-def make_entry(args, allow_negative_stock=False, via_landed_cost_voucher=False):
-	args.update({"doctype": "Stock Ledger Entry2"})
-	sle = frappe.get_doc(args)
-	sle.flags.ignore_permissions = 1
-	sle.allow_negative_stock=allow_negative_stock
-	sle.via_landed_cost_voucher = via_landed_cost_voucher
-	sle.insert()
-	sle.submit()
-	return sle.name
+# def make_entry(args, allow_negative_stock=False, via_landed_cost_voucher=False):
+# 	args.update({"doctype": "Stock Ledger Entry2"})
+# 	sle = frappe.get_doc(args)
+# 	sle.flags.ignore_permissions = 1
+# 	sle.allow_negative_stock=allow_negative_stock
+# 	sle.via_landed_cost_voucher = via_landed_cost_voucher
+# 	sle.insert()
+# 	sle.submit()
+# 	return sle.name
 
 def delete_cancelled_entry(voucher_type, voucher_no):
 	frappe.db.sql("""delete from `tabStock Ledger Entry2`
