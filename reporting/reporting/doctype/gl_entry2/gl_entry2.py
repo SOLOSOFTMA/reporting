@@ -284,13 +284,13 @@ def checkerrr(gl_map, cancel=False, adv_adj=False, merge_entries=True, update_ou
 		if not cancel:
 			gl_map = process_gl_map(gl_map, merge_entries)
 			if gl_map and len(gl_map) > 1:
-				# save_entries(gl_map, adv_adj, update_outstanding, from_repost)
-				return True 
+				if save_entries_chker(gl_map, adv_adj, update_outstanding, from_repost)
+					return True 
 			else:
 				return False 
 	
-		else:
-			delete_gl_entries(gl_map, adv_adj=adv_adj, update_outstanding=update_outstanding)
+		# else:
+		# 	delete_gl_entries(gl_map, adv_adj=adv_adj, update_outstanding=update_outstanding)
 
 
 def process_gl_map(gl_map, merge_entries=True):
@@ -352,6 +352,21 @@ def check_if_in_list(gle, gl_map):
 			and cstr(e.get('project')) == cstr(gle.get('project')):
 				return e
 
+def save_entries_chker(gl_map, adv_adj, update_outstanding, from_repost=False):
+	if not from_repost:
+		validate_account_for_perpetual_inventory(gl_map)
+
+	if  round_off_debit_credit_chker(gl_map):
+		return True
+	else:
+		return False
+	# for entry in gl_map:
+	# 	make_entry(entry, adv_adj, update_outstanding, from_repost)
+		
+	# 	# check against budget
+	# 	if not from_repost:
+	# 		validate_expense_against_budget(entry)
+
 def save_entries(gl_map, adv_adj, update_outstanding, from_repost=False):
 	if not from_repost:
 		validate_account_for_perpetual_inventory(gl_map)
@@ -383,6 +398,32 @@ def validate_account_for_perpetual_inventory(gl_map):
 				if entry.account in aii_accounts:
 					frappe.throw(_("Account: {0} can only be updated via Stock Transactions")
 						.format(entry.account), StockAccountInvalidTransaction)
+
+
+
+def round_off_debit_credit_chker(gl_map):
+	precision = get_field_precision(frappe.get_meta("GL Entry2").get_field("debit"),
+		currency=frappe.db.get_value("Company", gl_map[0].company, "default_currency", cache=True))
+
+	debit_credit_diff = 0.0
+	for entry in gl_map:
+		entry.debit = flt(entry.debit, precision)
+		entry.credit = flt(entry.credit, precision)
+		debit_credit_diff += entry.debit - entry.credit
+
+	debit_credit_diff = flt(debit_credit_diff, precision)
+	
+	if gl_map[0]["voucher_type"] in ("Journal Entry", "Payment Entry"):
+		allowance = 5.0 / (10**precision)
+	else:
+		allowance = .5
+	
+	if abs(debit_credit_diff) >= allowance:
+		return False
+		# frappe.throw(_("Debit and Credit not equal for {0} #{1}. Difference is {2}.")
+		# 	.format(gl_map[0].voucher_type, gl_map[0].voucher_no, debit_credit_diff))
+	else:
+		return True
 
 def round_off_debit_credit(gl_map):
 	precision = get_field_precision(frappe.get_meta("GL Entry2").get_field("debit"),
