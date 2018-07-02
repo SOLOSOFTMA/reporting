@@ -26,7 +26,7 @@ list_of_error = []
 
 def new_server():
 	jv = frappe.get_all('Journal Entry', filters={'docstatus': 0 }, fields=['name', 'posting_date'], order_by='posting_date')
-	for jv_object in jv:                                                       
+	for jv_object in jv:
 		jv_name = jv_object.get('name')
 		doc = frappe.get_doc("Journal Entry", jv_name)
 		make_gl_entries(doc,"create")
@@ -263,10 +263,14 @@ def make_gl_entries(doc, method):
 			)
 
 	if gl_map:
+		print(checkerrr(gl_map, cancel=cancel, adv_adj=adv_adj))
 		if checkerrr(gl_map, cancel=cancel, adv_adj=adv_adj):
+
 			make_gl2_entries(gl_map, cancel=cancel, adv_adj=adv_adj)
 		else:
+
 			list_of_error.append(str(doc.name))
+
 
 def make_gl2_entries(gl_map, cancel=False, adv_adj=False, merge_entries=True, update_outstanding='Yes', from_repost=False):
 	if gl_map:
