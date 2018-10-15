@@ -263,7 +263,7 @@ def make_gl_entries(doc, method):
 			)
 
 	if gl_map:
-		print(checkerrr(gl_map, cancel=cancel, adv_adj=adv_adj))
+		#print(checkerrr(gl_map, cancel=cancel, adv_adj=adv_adj))
 		if checkerrr(gl_map, cancel=cancel, adv_adj=adv_adj):
 
 			make_gl2_entries(gl_map, cancel=cancel, adv_adj=adv_adj)
@@ -375,7 +375,7 @@ def save_entries(gl_map, adv_adj, update_outstanding, from_repost=False):
 	if not from_repost:
 		validate_account_for_perpetual_inventory(gl_map)
 
-	round_off_debit_credit(gl_map)
+	#round_off_debit_credit(gl_map)
 	for entry in gl_map:
 		make_entry(entry, adv_adj, update_outstanding, from_repost)
 		
