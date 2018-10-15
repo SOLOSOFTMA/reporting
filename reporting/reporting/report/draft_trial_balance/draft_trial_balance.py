@@ -5,8 +5,8 @@ from __future__ import unicode_literals
 import frappe, erpnext
 from frappe import _
 from frappe.utils import flt, getdate, formatdate, cstr
-from reporting.reporting.report.financial_statements \
-	import filter_accounts, set_gl_entries_by_account2, filter_out_zero_value_rows
+from erpnext.accounts.report.financial_statements \
+	import filter_accounts, set_gl_entries_by_account, filter_out_zero_value_rows
 
 value_fields = ("opening_debit", "opening_credit", "debit", "credit", "closing_debit", "closing_credit")
 
@@ -51,10 +51,10 @@ def validate_filters(filters):
 		filters.to_date = filters.year_end_date
 
 def get_data(filters):
-	accounts = frappe.db.sql("""select name, parent_account, account_name, root_type, report_type, lft, rgt
+	accounts = frappe.db.sql("""select name, account_number, parent_account, account_name, root_type, report_type, lft, rgt
 		from `tabAccount` where company=%s order by lft""", filters.company, as_dict=True)
 	company_currency = erpnext.get_company_currency(filters.company)
-	
+
 	if not accounts:
 		return None
 
@@ -65,7 +65,7 @@ def get_data(filters):
 
 	gl_entries_by_account = {}
 
-	set_gl_entries_by_account2(filters.company, filters.from_date,
+	set_gl_entries_by_account(filters.company, filters.from_date,
 		filters.to_date, min_lft, max_rgt, filters, gl_entries_by_account, ignore_closing_entries=not flt(filters.with_period_closing_entry))
 
 	opening_balances = get_opening_balances(filters)
@@ -82,8 +82,8 @@ def get_data(filters):
 def get_opening_balances(filters):
 	balance_sheet_opening = get_rootwise_opening_balances(filters, "Balance Sheet")
 	pl_opening = get_rootwise_opening_balances(filters, "Profit and Loss")
-	balance_sheet_opening.update(pl_opening)
 
+	balance_sheet_opening.update(pl_opening)
 	return balance_sheet_opening
 
 
@@ -96,49 +96,29 @@ def get_rootwise_opening_balances(filters, report_type):
 	if not flt(filters.with_period_closing_entry):
 		additional_conditions += " and ifnull(voucher_type, '')!='Period Closing Voucher'"
 
-		"""this method populates the common properties of a gl entry record"""
+	gle = frappe.db.sql("""
+		select
+			account, sum(debit) as opening_debit, sum(credit) as opening_credit
+		from `tabGL Entry2`
+		where
+			company=%(company)s
+			{additional_conditions}
+			and (posting_date <= %(from_date)s or ifnull(is_opening, 'No') = 'Yes')
+			and account in (select name from `tabAccount` where report_type=%(report_type)s)
+		group by account""".format(additional_conditions=additional_conditions),
+		{
+			"company": filters.company,
+			"from_date": filters.from_date,
+			"report_type": report_type,
+			"year_start_date": filters.year_start_date
+		},
+		as_dict=True)
 
-	draft_journal_entry = frappe.get_all('Journal Entry', filters={'docstatus': '0','is_opening':'Yes'}, \
-		fields=['name'])
+	opening = frappe._dict()
+	for d in gle:
+		opening.setdefault(d.account, d)
 
-
-	gle = {}
-
-	for ge in draft_journal_entry:	
-		doc = frappe.get_doc('Journal Entry', ge['name'])
-
-		for d in doc.accounts:
-			if d.debit or d.credit:
-				if  d.account in gle:
-					gle[d.account]['opening_debit'] +=  flt(d.debit, d.precision("debit"))
-					gle[d.account]['opening_credit'] += flt(d.credit, d.precision("credit"))
-				else:
-					gle[d.account] = {
-											"account":d.account,
-											'opening_debit' : flt(d.debit, d.precision("debit")),
-											'opening_credit' : flt(d.credit, d.precision("credit"))
-										}
-
-
-	# gle = frappe.db.sql("""
-	# 	select
-	# 		account, sum(debit) as opening_debit, sum(credit) as opening_credit
-	# 	from `tabGL Entry`
-	# 	where
-	# 		company=%(company)s
-	# 		{additional_conditions}
-	# 		and (posting_date < %(from_date)s or ifnull(is_opening, 'No') = 'Yes')
-	# 		and account in (select name from `tabAccount` where report_type=%(report_type)s)
-	# 	group by account""".format(additional_conditions=additional_conditions),
-	# 	{
-	# 		"company": filters.company,
-	# 		"from_date": filters.from_date,
-	# 		"report_type": report_type,
-	# 		"year_start_date": filters.year_start_date
-	# 	},
-	# 	as_dict=True)
-
-	return gle
+	return opening
 
 def calculate_values(accounts, gl_entries_by_account, opening_balances, filters, company_currency):
 	init = {
@@ -182,8 +162,6 @@ def calculate_values(accounts, gl_entries_by_account, opening_balances, filters,
 		total_row["credit"] += d["credit"]
 		total_row["opening_debit"] += d["opening_debit"]
 		total_row["opening_credit"] += d["opening_credit"]
-		total_row["closing_debit"] += (d["opening_debit"] + d["debit"])
-		total_row["closing_credit"] += (d["opening_credit"] + d["credit"])
 
 	return total_row
 
@@ -196,16 +174,19 @@ def accumulate_values_into_parents(accounts, accounts_by_name):
 def prepare_data(accounts, filters, total_row, parent_children_map, company_currency):
 	data = []
 	
+	total_row["closing_debit"] = total_row["closing_credit"] = 0
+
 	for d in accounts:
 		has_value = False
 		row = {
-			"account_name": d.account_name,
 			"account": d.name,
 			"parent_account": d.parent_account,
 			"indent": d.indent,
 			"from_date": filters.from_date,
 			"to_date": filters.to_date,
-			"currency": company_currency
+			"currency": company_currency,
+			"account_name": ('{} - {}'.format(d.account_number, d.account_name)
+				if d.account_number else d.account_name)
 		}
 
 		prepare_opening_and_closing(d)
@@ -219,6 +200,10 @@ def prepare_data(accounts, filters, total_row, parent_children_map, company_curr
 
 		row["has_value"] = has_value
 		data.append(row)
+		
+		if not d.parent_account:
+		    total_row["closing_debit"] += (d["debit"] - d["credit"]) if (d["debit"] - d["credit"]) > 0 else 0
+		    total_row["closing_credit"] += abs(d["debit"] - d["credit"]) if (d["debit"] - d["credit"]) < 0 else 0
 		
 	data.extend([{},total_row])
 
@@ -303,3 +288,4 @@ def prepare_opening_and_closing(d):
 	else:
 		d["opening_credit"] -= d["opening_debit"]
 		d["opening_debit"] = 0.0
+
