@@ -66,13 +66,13 @@ def set_account_currency(filters):
 		if filters.get("account"):
 			account_currency = get_account_currency(filters.account)
 		elif filters.get("party"):
-			gle_currency = frappe.db.get_value("GL Entry2", {"party_type": filters.party_type,
+			gle_currency = frappe.db.get_value("GL Entry", {"party_type": filters.party_type,
 				"party": filters.party, "company": filters.company}, "account_currency")
 			if gle_currency:
 				account_currency = gle_currency
 			else:
-				account_currency = (None if filters.party_type in ["Employee", "Student", "Shareholder", "Member"] else
-					frappe.db.get_value(filters.party_type, filters.party, "default_currency"))
+				account_currency = None if filters.party_type == "Employee" else \
+					frappe.db.get_value(filters.party_type, filters.party, "default_currency")
 
 		filters["account_currency"] = account_currency or filters.company_currency
 
@@ -91,6 +91,8 @@ def get_result(filters, account_details):
 	return result
 
 def get_gl_entries(filters):
+	from frappe.utils import cint, getdate, formatdate
+
 	select_fields = """, sum(debit_in_account_currency) as debit_in_account_currency,
 		sum(credit_in_account_currency) as credit_in_account_currency""" \
 		if filters.get("show_in_account_currency") else ""
@@ -98,20 +100,89 @@ def get_gl_entries(filters):
 	group_by_condition = "group by voucher_type, voucher_no, account, cost_center" \
 		if filters.get("group_by_voucher") else "group by name"
 
-	gl_entries = frappe.db.sql("""
+	target_docs_list = ["Payment Entry","Purchase Invoice","Expense Claim","Journal Entry",
+		"Sales Invoice","Purchase Receipt","Delivery Note"]
+	gl_entries = []
+	for target_doc in target_docs_list :
+		
+		get_all_docs = frappe.get_list(target_doc,fields=['name'],
+			filters=[
+			['docstatus',"=", 0],
+			['company',"=", filters.get('company')],
+			["posting_date",">=",getdate(filters.get("from_date"))],
+			["posting_date","<=",getdate(filters.get("to_date"))]
+			])
+		for doc_name in get_all_docs : 
+			doc = frappe.get_doc(target_doc,doc_name["name"])
+			
+			if target_doc == "Payment Entry":
+				if doc.payment_type in ("Receive", "Pay") and not doc.get("party_account_field"):
+					doc.setup_party_account_field()
+				
+				doc.add_party_gl_entries(gl_entries)
+				doc.add_bank_gl_entries(gl_entries)
+				doc.add_deductions_gl_entries(gl_entries)	
+			
+			if target_doc == "Journal Entry":
+				gl_map = []
+				for d in doc.get("accounts"):
+					if d.debit or d.credit:
+						gl_map.append(
+							doc.get_gl_dict({
+								"account": d.account,
+								"party_type": d.party_type,
+								"party": d.party,
+								"against": d.against_account,
+								"debit": flt(d.debit, d.precision("debit")),
+								"credit": flt(d.credit, d.precision("credit")),
+								"account_currency": d.account_currency,
+								"debit_in_account_currency": flt(d.debit_in_account_currency, d.precision("debit_in_account_currency")),
+								"credit_in_account_currency": flt(d.credit_in_account_currency, d.precision("credit_in_account_currency")),
+								"against_voucher_type": d.reference_type,
+								"against_voucher": d.reference_name,
+								"remarks": doc.remark,
+								"cost_center": d.cost_center,
+								"project": d.project
+							})
+						)
+				gl_entries.extend(gl_map)
+				
+			if target_doc in ["Purchase Receipt"]:
+				from erpnext.stock import get_warehouse_account_map
+				warehouse_account = get_warehouse_account_map()
+				gl_entries.extend(doc.get_gl_entries(warehouse_account))
+				
+			if target_doc in ["Purchase Invoice","Expense Claim","Sales Invoice","Delivery Note"]:
+				gl_entries.extend(doc.get_gl_entries())
+				
+	gl_entries1 = frappe.db.sql("""
 		select
 			posting_date, account, party_type, party,
 			sum(debit) as debit, sum(credit) as credit,
 			voucher_type, voucher_no, cost_center, project,
 			against_voucher_type, against_voucher,
 			remarks, against, is_opening {select_fields}
-		from `tabGL Entry2`
+		from `tabGL Entry`
 		where company=%(company)s {conditions}
 		{group_by_condition}
 		order by posting_date, account"""\
 		.format(select_fields=select_fields, conditions=get_conditions(filters),
 			group_by_condition=group_by_condition), filters, as_dict=1)
 
+	if filters.get("show_draft") !=1 and filters.get("show_submitted") != 1 :
+		return []
+	
+	elif filters.get("show_draft") == 1 and filters.get("show_submitted") != 1 :
+		return gl_entries
+	
+	elif filters.get("show_draft") != 1 and filters.get("show_submitted") == 1 :
+		return gl_entries1
+	
+	elif filters.get("show_draft") == 1 and filters.get("show_submitted") == 1 :
+		gl_entries.extend(gl_entries1)
+		return gl_entries
+
+	
 	return gl_entries
 
 def get_conditions(filters):
@@ -137,7 +208,7 @@ def get_conditions(filters):
 		conditions.append("project=%(project)s")
 
 	from frappe.desk.reportview import build_match_conditions
-	match_conditions = build_match_conditions("GL Entry2")
+	match_conditions = build_match_conditions("GL Entry")
 	if match_conditions: conditions.append(match_conditions)
 
 	return "and {}".format(" and ".join(conditions)) if conditions else ""
@@ -394,4 +465,3 @@ def get_columns(filters):
 	])
 
 	return columns
-
