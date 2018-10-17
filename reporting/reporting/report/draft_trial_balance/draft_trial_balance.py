@@ -214,8 +214,8 @@ def calculate_values(accounts, gl_entries_by_account, opening_balances, filters,
 		total_row["credit"] += d["credit"]
 		total_row["opening_debit"] += d["opening_debit"]
 		total_row["opening_credit"] += d["opening_credit"]
-		total_row["closing_debit"] += (d["opening_debit"] + d["debit"])
-		total_row["closing_credit"] += (d["opening_credit"] + d["credit"])
+		#total_row["closing_debit"] += (d["opening_debit"] + d["debit"])
+		#total_row["closing_credit"] += (d["opening_credit"] + d["credit"])
 
 	return total_row
 
@@ -251,7 +251,10 @@ def prepare_data(accounts, filters, total_row, parent_children_map, company_curr
 
 		row["has_value"] = has_value
 		data.append(row)
-		
+		if not d.parent_account:
+		    total_row["closing_debit"] += (d["debit"] - d["credit"]) if (d["debit"] - d["credit"]) > 0 else 0
+		    total_row["closing_credit"] += abs(d["debit"] - d["credit"]) if (d["debit"] - d["credit"]) < 0 else 0
+
 	data.extend([{},total_row])
 
 	return data
