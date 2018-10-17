@@ -118,7 +118,8 @@ doc_events = {
 	"Journal Entry": {
 		"after_insert": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries",
 		"on_trash": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_cancel",
-		"on_submit": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_cancel"
+		"on_submit": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_cancel",
+		"on_update": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_on_update"
 	}
 	# ,
 	# "Delivery Note": {

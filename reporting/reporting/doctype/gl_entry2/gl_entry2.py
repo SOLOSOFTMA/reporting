@@ -232,6 +232,10 @@ def make_gl_entries_cancel(doc, method):
 	if gl_map:
 		make_gl2_entries(gl_map, cancel=cancel, adv_adj=adv_adj)
 
+@frappe.whitelist()
+def make_gl_entries_on_update(doc, method):
+	make_gl_entries_cancel(doc, method)
+	make_gl_entries(doc, method)
 
 @frappe.whitelist()
 def make_gl_entries(doc, method):
