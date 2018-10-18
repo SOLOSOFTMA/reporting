@@ -206,7 +206,7 @@ def make_gl_entries_cancel(doc, method):
 	cancel=1
 	adv_adj=0,
 	gl_map = []
-	
+
 	for d in self.get("accounts"):
 		if d.debit or d.credit:
 			gl_map.append(
@@ -231,6 +231,15 @@ def make_gl_entries_cancel(doc, method):
 
 	if gl_map:
 		make_gl2_entries(gl_map, cancel=cancel, adv_adj=adv_adj)
+
+@frappe.whitelist()
+def delete_amend_from(name):
+	doc = frappe.get_doc("Journal Entry", name)
+	if doc.amended_from:
+		frappe.db.sql("""delete from `tabJournal Entry`	where name=%s """, (doc.amended_from))
+		frappe.db.sql("""UPDATE `tabJournal Entry` SET name = %s, WHERE name = %s""",(doc.amended_form,doc.name))
+
+
 
 @frappe.whitelist()
 def make_gl_entries_on_update(doc, method):
