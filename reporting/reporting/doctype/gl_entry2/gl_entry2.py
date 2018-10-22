@@ -240,6 +240,27 @@ def delete_amend_from(name):
 		frappe.db.sql("""UPDATE `tabJournal Entry` SET name = %s, WHERE name = %s""",(doc.amended_form,doc.name))
 
 
+@frappe.whitelist()
+def on_update_payment_entry(doc, method):
+	make_gl_entries_cancel_payment_entry(doc, method)
+	make_gl_entries_payment_entry(doc, method)
+
+@frappe.whitelist()
+def on_update_expense_claim(doc, method):
+	make_gl_entries_expense_cancel(doc, method)
+	make_gl_entries_expense(doc, method)
+
+@frappe.whitelist()
+def on_update_purchase_invoice(doc, method):
+	make_gl_entries_stock_cancel(doc, method)
+	make_gl_entries_purchase(doc, method)
+
+
+@frappe.whitelist()
+def on_update_sales_invoice(doc, method):
+	make_gl_entries_stock_cancel(doc, method)
+	make_gl_entries_sales_invoice(doc, method)
+
 
 @frappe.whitelist()
 def make_gl_entries_on_update(doc, method):
