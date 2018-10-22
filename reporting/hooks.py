@@ -94,14 +94,14 @@ doc_events = {
 		"after_insert": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_payment_entry",
 		"on_trash": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_cancel_payment_entry",
 		"on_submit": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_cancel_payment_entry",
-                #"on_update": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_on_update"
+                "on_update": "reporting.reporting.doctype.gl_entry2.gl_entry2.on_update_payment_entry"
 
 	},
 	"Expense Claim": {
 		"after_insert": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_expense",
 		"on_trash": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_expense_cancel",
 		"on_submit": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_expense_cancel",
-                #"on_update": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_on_update"
+                "on_update": "reporting.reporting.doctype.gl_entry2.gl_entry2.on_update_expense_claim"
 
 	},
 	# "Purchase Receipt": {
@@ -113,14 +113,14 @@ doc_events = {
 		"after_insert": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_purchase",
 		"on_trash": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_stock_cancel",
 		"on_submit": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_stock_cancel",
-                #"on_update": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_on_update"
+                "on_update": "reporting.reporting.doctype.gl_entry2.gl_entry2.on_update_purchase_invoice"
 
 	},
 	"Sales Invoice": {
 		"after_insert": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_sales_invoice",
 		"on_trash": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_stock_cancel",
 		"on_submit": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_stock_cancel",
-                #"on_update": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_on_update"
+                "on_update": "reporting.reporting.doctype.gl_entry2.gl_entry2.on_update_sales_invoice"
 
 	},
 	"Journal Entry": {
