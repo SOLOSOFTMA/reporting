@@ -93,12 +93,16 @@ doc_events = {
 	"Payment Entry": {
 		"after_insert": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_payment_entry",
 		"on_trash": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_cancel_payment_entry",
-		"on_submit": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_cancel_payment_entry"
+		"on_submit": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_cancel_payment_entry",
+                #"on_update": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_on_update"
+
 	},
 	"Expense Claim": {
 		"after_insert": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_expense",
 		"on_trash": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_expense_cancel",
-		"on_submit": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_expense_cancel"
+		"on_submit": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_expense_cancel",
+                #"on_update": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_on_update"
+
 	},
 	# "Purchase Receipt": {
 	# 	"after_insert": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_purchase_receipt_and_Delivery_note",
@@ -108,12 +112,16 @@ doc_events = {
 	"Purchase Invoice": {
 		"after_insert": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_purchase",
 		"on_trash": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_stock_cancel",
-		"on_submit": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_stock_cancel"
+		"on_submit": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_stock_cancel",
+                #"on_update": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_on_update"
+
 	},
 	"Sales Invoice": {
 		"after_insert": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_sales_invoice",
 		"on_trash": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_stock_cancel",
-		"on_submit": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_stock_cancel"
+		"on_submit": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_stock_cancel",
+                #"on_update": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries_on_update"
+
 	},
 	"Journal Entry": {
 		"after_insert": "reporting.reporting.doctype.gl_entry2.gl_entry2.make_gl_entries",
